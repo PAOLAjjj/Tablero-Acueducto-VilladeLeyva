@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero de seguimiento</title>
+<style>
+  :root {
+    --azul-oscuro: #1b2a4a;
+    --azul-tarjeta: #2f6fa8;
+    --azul-tarjeta-fondo: #eef4fa;
+    --verde: #2f7d5e;
+    --verde-tarjeta-fondo: #eaf5f0;
+    --gris-fondo: #f4f6f8;
+    --gris-texto: #4a4f57;
+    --borde: #e1e5ea;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: var(--gris-fondo);
+    color: var(--gris-texto);
+    padding: 32px 16px;
+  }
+
+  .contenedor {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  header {
+    background: linear-gradient(135deg, var(--azul-oscuro), #2c3e63);
+    color: white;
+    padding: 28px 32px;
+    border-radius: 10px 10px 0 0;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 26px;
+    letter-spacing: 0.3px;
+  }
+
+  header p {
+    margin: 6px 0 0;
+    font-size: 14px;
+    color: #c9d1e0;
+  }
+
+  .ficha {
+    background: white;
+    border: 1px solid var(--borde);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 24px 32px 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+
+  .fila {
+    display: flex;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .fila:last-child {
+    border-bottom: none;
+  }
+
+  .etiqueta {
+    flex: 0 0 220px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--verde);
+  }
+
+  .valor {
+    flex: 1;
+    font-size: 15px;
+    color: var(--azul-oscuro);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 600px) {
+    .fila { flex-direction: column; }
+    .etiqueta { margin-bottom: 4px; }
+  }
+
+  .seccion-indicadores,
+  .seccion-cronograma,
+  .seccion-avance,
+  .seccion-financiero,
+  .seccion-resultado {
+    margin: 40px 0;
+  }
+
+  .seccion-indicadores h2,
+  .seccion-cronograma h2,
+  .seccion-avance h2,
+  .seccion-financiero h2,
+  .seccion-resultado h2 {
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--azul-oscuro);
+    margin: 0 0 16px 4px;
+  }
+
+  .tarjeta {
+    background: var(--azul-tarjeta-fondo);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 20px 18px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    border-top: 4px solid var(--azul-tarjeta);
+  }
+
+  .tarjetas {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .tarjeta-titulo {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--gris-texto);
+    margin-bottom: 10px;
+  }
+
+  .tarjeta-valor {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--azul-oscuro);
+    line-height: 1.2;
+  }
+
+  .tarjeta-meta {
+    font-size: 12px;
+    color: var(--gris-texto);
+    margin-top: 6px;
+  }
+
+  @media (max-width: 700px) {
+    .tarjetas { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 420px) {
+    .tarjetas { grid-template-columns: 1fr; }
+  }
+
+  .tabla-cronograma {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+
+  .tabla-cronograma th {
+    background-color: var(--azul-oscuro);
+    color: white;
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 12px 16px;
+  }
+
+  .tabla-cronograma td {
+    padding: 12px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--borde);
+    color: var(--gris-texto);
+  }
+
+  .tabla-cronograma tr:last-child td {
+    border-bottom: none;
+  }
+
+  .tabla-cronograma tr:nth-child(even) {
+    background-color: var(--gris-fondo);
+  }
+
+  .tabla-cronograma td:first-child {
+    color: var(--azul-oscuro);
+    font-weight: 600;
+  }
+
+  @media (max-width: 600px) {
+    .tabla-cronograma { font-size: 13px; }
+    .tabla-cronograma th, .tabla-cronograma td { padding: 10px 10px; }
+  }
+
+  .filtros-estado {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 16px 4px;
+  }
+
+  .filtro-btn {
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--azul-oscuro);
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    padding: 7px 16px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .filtro-btn:hover {
+    border-color: var(--azul-tarjeta);
+  }
+
+  .filtro-btn.activo {
+    background: var(--azul-tarjeta);
+    border-color: var(--azul-tarjeta);
+    color: white;
+  }
+
+  .tabla-cronograma tbody tr {
+    transition: opacity 0.2s ease;
+  }
+
+  .tabla-cronograma tbody tr.fila-oculta {
+    display: none;
+  }
+
+  .grafico-barras {
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 24px 28px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+
+  .fila-barra {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .fila-barra:last-child {
+    margin-bottom: 0;
+  }
+
+  .fila-barra.fila-oculta {
+    display: none;
+  }
+
+  .nombre-actividad {
+    flex: 0 0 210px;
+    font-size: 13px;
+    color: var(--azul-oscuro);
+    line-height: 1.3;
+  }
+
+  .barra-fondo {
+    flex: 1;
+    background-color: var(--gris-fondo);
+    border-radius: 6px;
+    height: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .barra-relleno {
+    height: 100%;
+    background-color: var(--verde);
+    border-radius: 6px 0 0 6px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    box-sizing: border-box;
+    min-width: 34px;
+  }
+
+  .porcentaje-barra {
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+  }
+
+  @media (max-width: 600px) {
+    .fila-barra { flex-direction: column; align-items: stretch; gap: 6px; }
+    .nombre-actividad { flex: none; }
+  }
+
+  .tarjetas-financiero {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 700px) {
+    .tarjetas-financiero { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 420px) {
+    .tarjetas-financiero { grid-template-columns: 1fr; }
+  }
+
+  .tarjetas-resultado {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .tarjeta-resultado {
+    background: var(--verde-tarjeta-fondo);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 20px 18px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    border-top: 4px solid var(--verde);
+  }
+
+  .tarjeta-resultado-titulo {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--gris-texto);
+    margin-bottom: 12px;
+  }
+
+  .tarjeta-resultado-valor {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--azul-oscuro);
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+
+  .resultado-detalle {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--gris-texto);
+    border-top: 1px solid var(--borde);
+    padding-top: 8px;
+  }
+
+  .resultado-detalle span:first-child {
+    font-weight: 600;
+  }
+
+  @media (max-width: 700px) {
+    .tarjetas-resultado { grid-template-columns: 1fr; }
+  }
+
+  .seccion-cumplimiento {
+    margin: 40px 0;
+  }
+
+  .seccion-cumplimiento h2 {
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--azul-oscuro);
+    margin: 0 0 16px 4px;
+  }
+
+  .filtro-btn, .filtro-indicador-btn {
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--azul-oscuro);
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    padding: 7px 16px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .filtro-btn:hover, .filtro-indicador-btn:hover {
+    border-color: var(--azul-tarjeta);
+  }
+
+  .filtro-indicador-btn:hover {
+    border-color: var(--verde);
+  }
+
+  .filtro-btn.activo, .filtro-indicador-btn.activo {
+    background: var(--azul-tarjeta);
+    border-color: var(--azul-tarjeta);
+    color: white;
+  }
+
+  .filtro-indicador-btn.activo {
+    background: var(--verde);
+    border-color: var(--verde);
+  }
+
+  .filtros-indicador {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 16px 4px;
+  }
+
+  .panel-cumplimiento {
+    display: flex;
+    justify-content: center;
+  }
+
+  .dona-panel {
+    background: var(--verde-tarjeta-fondo);
+    border: 1px solid var(--borde);
+    border-top: 4px solid var(--verde);
+    border-radius: 10px;
+    padding: 24px 28px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+  }
+
+  .dona-panel.fila-oculta {
+    display: none;
+  }
+
+  .dona-panel-titulo {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--gris-texto);
+    margin-bottom: 16px;
+  }
+
+  .dona {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+  }
+
+  .dona-centro {
+    width: 112px;
+    height: 112px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .dona-porcentaje {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azul-oscuro);
+    line-height: 1.1;
+  }
+
+  .dona-etiqueta {
+    font-size: 10px;
+    color: var(--gris-texto);
+    margin-top: 4px;
+    max-width: 90px;
+    line-height: 1.3;
+  }
+
+  .dona-detalle {
+    text-align: left;
+  }
+</style>
+</head>
+<body>
+  <div class="contenedor">
+    <header>
+      <h1>Tablero de seguimiento</h1>
+      <p>Seguimiento a la ejecución del proyecto</p>
+    </header>
+
+    <div class="ficha">
+      <div class="fila">
+        <div class="etiqueta">Nombre del proyecto</div>
+        <div class="valor">Mejoramiento del Servicio de Acueducto en la Zona Rural del Municipio de Villa de Leyva</div>
+      </div>
+      <div class="fila">
+        <div class="etiqueta">Localización</div>
+        <div class="valor">Veredas El Roble, Sáquima, Capilla, Cardonal y Llano Blanco — Municipio de Villa de Leyva, Boyacá</div>
+      </div>
+      <div class="fila">
+        <div class="etiqueta">Entidad ejecutora</div>
+        <div class="valor">Alcaldía Municipal de Villa de Leyva — Secretaría de Planeación e Infraestructura</div>
+      </div>
+      <div class="fila">
+        <div class="etiqueta">Fecha de corte del informe</div>
+        <div class="valor">11 de agosto de 2026</div>
+      </div>
+    </div>
+
+    <div class="seccion-indicadores">
+      <h2>Indicadores clave</h2>
+      <div class="tarjetas">
+        <div class="tarjeta">
+          <div class="tarjeta-titulo">Tiempo transcurrido</div>
+          <div class="tarjeta-valor">62%</div>
+          <div class="tarjeta-meta">283 de 456 días</div>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-titulo">Ejecución presupuestal</div>
+          <div class="tarjeta-valor">27%</div>
+          <div class="tarjeta-meta">Meta: 100%</div>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-titulo">Cumplimiento del cronograma</div>
+          <div class="tarjeta-valor">33%</div>
+          <div class="tarjeta-meta">3 de 9 actividades completadas</div>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-titulo">Cobertura de acueducto</div>
+          <div class="tarjeta-valor">≈56%</div>
+          <div class="tarjeta-meta">Meta: 95%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="seccion-cronograma">
+      <h2>Cronograma de actividades</h2>
+      <div class="filtros-estado" role="group" aria-label="Filtrar actividades por estado">
+        <button type="button" class="filtro-btn activo" data-filtro="todas">Todas</button>
+        <button type="button" class="filtro-btn" data-filtro="completada">Completada</button>
+        <button type="button" class="filtro-btn" data-filtro="en-ejecucion">En ejecución</button>
+        <button type="button" class="filtro-btn" data-filtro="recien-iniciada">Recién iniciada</button>
+        <button type="button" class="filtro-btn" data-filtro="no-ha-iniciado">No ha iniciado</button>
+      </div>
+      <table class="tabla-cronograma">
+        <thead>
+          <tr>
+            <th>Actividad</th>
+            <th>Ventana planeada</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-estado="completada">
+            <td>Diagnosticar tramos de red existente</td>
+            <td>01/11/2025 – 30/11/2025</td>
+            <td>Completada</td>
+          </tr>
+          <tr data-estado="completada">
+            <td>Diseñar la ampliación de la red</td>
+            <td>01/12/2025 – 28/02/2026</td>
+            <td>Completada</td>
+          </tr>
+          <tr data-estado="completada">
+            <td>Adelantar contratación y adquisición de materiales</td>
+            <td>01/03/2026 – 31/05/2026</td>
+            <td>Completada, con 10 días de retraso frente a lo planeado por disponibilidad de proveedor</td>
+          </tr>
+          <tr data-estado="en-ejecucion">
+            <td>Ejecutar la ampliación de la red</td>
+            <td>01/06/2026 – 31/12/2026</td>
+            <td>En ejecución — 4,08 de 12 km (34%)</td>
+          </tr>
+          <tr data-estado="en-ejecucion">
+            <td>Ejecutar la rehabilitación de tramos</td>
+            <td>01/06/2026 – 31/10/2026</td>
+            <td>En ejecución — 2,82 de 6 km (47%)</td>
+          </tr>
+          <tr data-estado="recien-iniciada">
+            <td>Instalar acometidas y medidores</td>
+            <td>01/08/2026 – 31/01/2027</td>
+            <td>Recién iniciada — 37 de 620 conexiones (6%)</td>
+          </tr>
+          <tr data-estado="recien-iniciada">
+            <td>Legalizar usuarios</td>
+            <td>01/08/2026 – 31/01/2027</td>
+            <td>Recién iniciada — 37 de 620 usuarios (6%)</td>
+          </tr>
+          <tr data-estado="no-ha-iniciado">
+            <td>Instalar puntos de monitoreo</td>
+            <td>01/12/2026 – 31/12/2026</td>
+            <td>No ha iniciado</td>
+          </tr>
+          <tr data-estado="no-ha-iniciado">
+            <td>Seguimiento a la calidad del agua</td>
+            <td>01/01/2027 – 31/01/2027</td>
+            <td>No ha iniciado</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="seccion-avance">
+      <h2>Avance físico por actividad</h2>
+      <div class="grafico-barras">
+        <div class="fila-barra" data-estado="completada">
+          <div class="nombre-actividad">Diagnosticar tramos de red</div>
+          <div class="barra-fondo">
+            <div class="barra-relleno" style="width:100%;"><span class="porcentaje-barra">100%</span></div>
+          </div>
+        </div>
+        <div class="fila-barra" data-estado="completada">
+          <div class="nombre-actividad">Diseñar la ampliación de la red</div>
+          <div class="barra-fondo">
+            <div class="barra-relleno" style="width:100%;"><span class="porcentaje-barra">100%</span></div>
+          </div>
+        </div>
+        <div class="fila-barra" data-estado="completada">
+          <div class="nombre-actividad">Contratación y adquisición</div>
+          <div class="barra-fondo">
+            <div class="barra-relleno" style="width:100%;"><span class="porcentaje-barra">100%</span></div>
+          </div>
+        </div>
+        <div class="fila-barra" data-estado="en-ejecucion">
+          <div class="nombre-actividad">Ampliación de la red</div>
+          <div class="barra-fondo">
+            <div class="barra-relleno" style="width:34%;"><span class="porcentaje-barra">34%</span></div>
+          </div>
+        </div>
+        <div class="fila-barra" data-estado="en-ejecucion">
+          <div class="nombre-actividad">Rehabilitación de tramos</div>
+          <div class="barra-fondo">
+            <div class="barra-relleno" style="width:47%;"><span class="porcentaje-barra">47%</span></div>
+          </div>
+        </div>
+        <div class="fila-barra" data-estado="recien-iniciada">
+          <div class="nombre-actividad">Acometidas y medidores</div>
+          <div class="barra-fondo">
+            <div class="barra-relleno" style="width:6%;"><span class="porcentaje-barra">6%</span></div>
+          </div>
+        </div>
+        <div class="fila-barra" data-estado="recien-iniciada">
+          <div class="nombre-actividad">Legalizar usuarios</div>
+          <div class="barra-fondo">
+            <div class="barra-relleno" style="width:6%;"><span class="porcentaje-barra">6%</span></div>
+          </div>
+        </div>
+        <div class="fila-barra" data-estado="no-ha-iniciado">
+          <div class="nombre-actividad">Puntos de monitoreo</div>
+          <div class="barra-fondo">
+            <div class="barra-relleno" style="width:1%; background-color: var(--borde);"><span class="porcentaje-barra" style="color: var(--gris-texto);">0%</span></div>
+          </div>
+        </div>
+        <div class="fila-barra" data-estado="no-ha-iniciado">
+          <div class="nombre-actividad">Calidad del agua</div>
+          <div class="barra-fondo">
+            <div class="barra-relleno" style="width:1%; background-color: var(--borde);"><span class="porcentaje-barra" style="color: var(--gris-texto);">0%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="seccion-financiero">
+      <h2>Estado financiero</h2>
+      <div class="tarjetas-financiero">
+        <div class="tarjeta">
+          <div class="tarjeta-titulo">Presupuesto total</div>
+          <div class="tarjeta-valor">$950.000.000</div>
+          <div class="tarjeta-meta">100%</div>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-titulo">Comprometido</div>
+          <div class="tarjeta-valor">$885.000.000</div>
+          <div class="tarjeta-meta">93%</div>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-titulo">Ejecutado</div>
+          <div class="tarjeta-valor">$255.966.129</div>
+          <div class="tarjeta-meta">27%</div>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-titulo">Ejecutado sobre comprometido</div>
+          <div class="tarjeta-valor">28,9%</div>
+          <div class="tarjeta-meta">$255.966.129 de $885.000.000</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="seccion-resultado">
+      <h2>Indicadores de resultado</h2>
+      <div class="tarjetas-resultado">
+        <div class="tarjeta-resultado">
+          <div class="tarjeta-resultado-titulo">Cobertura de acueducto</div>
+          <div class="resultado-detalle">
+            <span>Línea base</span><span>54%</span>
+          </div>
+          <div class="resultado-detalle">
+            <span>Valor al corte</span><span>≈56%</span>
+          </div>
+          <div class="resultado-detalle">
+            <span>Meta</span><span>95%</span>
+          </div>
+        </div>
+        <div class="tarjeta-resultado">
+          <div class="tarjeta-resultado-titulo">Continuidad del servicio</div>
+          <div class="resultado-detalle">
+            <span>Línea base</span><span>9 h/día</span>
+          </div>
+          <div class="resultado-detalle">
+            <span>Valor al corte</span><span>≈10,5 h/día</span>
+          </div>
+          <div class="resultado-detalle">
+            <span>Meta</span><span>20 h/día</span>
+          </div>
+        </div>
+        <div class="tarjeta-resultado">
+          <div class="tarjeta-resultado-titulo">Índice de Agua No Contabilizada (IANC)</div>
+          <div class="resultado-detalle">
+            <span>Línea base</span><span>42%</span>
+          </div>
+          <div class="resultado-detalle">
+            <span>Valor al corte</span><span>≈39%</span>
+          </div>
+          <div class="resultado-detalle">
+            <span>Meta</span><span>25%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="seccion-cumplimiento">
+      <h2>Cumplimiento de indicadores de resultado</h2>
+      <div class="filtros-indicador" role="group" aria-label="Seleccionar indicador de resultado">
+        <button type="button" class="filtro-indicador-btn activo" data-indicador="cobertura">Cobertura de acueducto</button>
+        <button type="button" class="filtro-indicador-btn" data-indicador="continuidad">Continuidad del servicio</button>
+        <button type="button" class="filtro-indicador-btn" data-indicador="ianc">IANC</button>
+      </div>
+      <div class="panel-cumplimiento">
+        <div class="dona-panel" data-indicador-panel="cobertura">
+          <div class="dona-panel-titulo">Cobertura de acueducto</div>
+          <div class="dona" style="background: conic-gradient(var(--verde) 4.9%, var(--gris-fondo) 0);">
+            <div class="dona-centro">
+              <span class="dona-porcentaje">≈4,9%</span>
+              <span class="dona-etiqueta">avance hacia la meta</span>
+            </div>
+          </div>
+          <div class="dona-detalle">
+            <div class="resultado-detalle"><span>Línea base</span><span>54%</span></div>
+            <div class="resultado-detalle"><span>Valor al corte</span><span>≈56%</span></div>
+            <div class="resultado-detalle"><span>Meta</span><span>95%</span></div>
+          </div>
+        </div>
+        <div class="dona-panel fila-oculta" data-indicador-panel="continuidad">
+          <div class="dona-panel-titulo">Continuidad del servicio</div>
+          <div class="dona" style="background: conic-gradient(var(--verde) 13.6%, var(--gris-fondo) 0);">
+            <div class="dona-centro">
+              <span class="dona-porcentaje">≈13,6%</span>
+              <span class="dona-etiqueta">avance hacia la meta</span>
+            </div>
+          </div>
+          <div class="dona-detalle">
+            <div class="resultado-detalle"><span>Línea base</span><span>9 h/día</span></div>
+            <div class="resultado-detalle"><span>Valor al corte</span><span>≈10,5 h/día</span></div>
+            <div class="resultado-detalle"><span>Meta</span><span>20 h/día</span></div>
+          </div>
+        </div>
+        <div class="dona-panel fila-oculta" data-indicador-panel="ianc">
+          <div class="dona-panel-titulo">Índice de Agua No Contabilizada (IANC)</div>
+          <div class="dona" style="background: conic-gradient(var(--verde) 17.6%, var(--gris-fondo) 0);">
+            <div class="dona-centro">
+              <span class="dona-porcentaje">≈17,6%</span>
+              <span class="dona-etiqueta">avance hacia la meta</span>
+            </div>
+          </div>
+          <div class="dona-detalle">
+            <div class="resultado-detalle"><span>Línea base</span><span>42%</span></div>
+            <div class="resultado-detalle"><span>Valor al corte</span><span>≈39%</span></div>
+            <div class="resultado-detalle"><span>Meta</span><span>25%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var botonesIndicador = document.querySelectorAll('.filtro-indicador-btn');
+      var paneles = document.querySelectorAll('.dona-panel');
+
+      botonesIndicador.forEach(function (boton) {
+        boton.addEventListener('click', function () {
+          var indicador = boton.getAttribute('data-indicador');
+
+          botonesIndicador.forEach(function (b) { b.classList.remove('activo'); });
+          boton.classList.add('activo');
+
+          paneles.forEach(function (panel) {
+            var coincide = panel.getAttribute('data-indicador-panel') === indicador;
+            panel.classList.toggle('fila-oculta', !coincide);
+          });
+        });
+      });
+    })();
+  </script>
+
+  <script>
+    (function () {
+      var botones = document.querySelectorAll('.filtro-btn');
+      var filas = document.querySelectorAll('.tabla-cronograma tbody tr');
+      var barras = document.querySelectorAll('.grafico-barras .fila-barra');
+
+      botones.forEach(function (boton) {
+        boton.addEventListener('click', function () {
+          var filtro = boton.getAttribute('data-filtro');
+
+          botones.forEach(function (b) { b.classList.remove('activo'); });
+          boton.classList.add('activo');
+
+          filas.forEach(function (fila) {
+            var coincide = filtro === 'todas' || fila.getAttribute('data-estado') === filtro;
+            fila.classList.toggle('fila-oculta', !coincide);
+          });
+
+          barras.forEach(function (barra) {
+            var coincide = filtro === 'todas' || barra.getAttribute('data-estado') === filtro;
+            barra.classList.toggle('fila-oculta', !coincide);
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
